@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Send, Settings, BarChart3, X } from 'lucide-react'
@@ -68,13 +67,20 @@ interface PreferencesData {
   excludedModels: string[];
 }
 
+interface RecentDecision {
+  userMessage?: string;
+  selectedModel?: string;
+  timestamp?: string;
+  category?: string;
+}
+
 interface AnalyticsData {
   totalRequests: number;
   mostUsedModel: { model: string; count: number } | null;
   mostUsedCategory: { category: string; count: number } | null;
   averageProcessingTime: number;
   totalTokensUsed: number;
-  recentDecisions: any[];
+  recentDecisions: RecentDecision[];
 }
 
 export default function ChatPage() {
@@ -612,7 +618,7 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-2 max-h-40 overflow-y-auto">
-                            {analytics.recentDecisions.slice(0, 5).map((decision: any, index: number) => (
+                            {analytics.recentDecisions.slice(0, 5).map((decision: RecentDecision, index: number) => (
                               <div key={index} className="flex justify-between items-center p-2 bg-slate-700/50 rounded">
                                 <div className="text-sm text-slate-200 truncate flex-1">
                                   {decision.userMessage?.substring(0, 50)}...

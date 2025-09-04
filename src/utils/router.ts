@@ -5,7 +5,8 @@ import { rateLimiter } from '@/utils/rateLimiter';
 import { Logger } from '@/utils/logger';
 import { preferencesManager } from '@/utils/preferencesManager';
 import { analytics } from '@/utils/analytics';
-import { PRIORITY_WEIGHTS } from '@/config/routingPreferences';
+import { RoutingPreferences } from '@/config/routingPreferences';
+
 
 const logger = new Logger('Router');
 
@@ -38,6 +39,8 @@ export interface ChatResponse {
   tokensUsed?: number;
   processingTime: number;
 }
+
+// Using RoutingPreferences from config instead of custom interface
 
 /**
  * Analyze user input to determine the best model for the task
@@ -167,20 +170,20 @@ Return your decision as JSON with the selected model ID, reasoning, and confiden
 /**
  * Apply user preferences to filter available models
  */
-function applyUserPreferences(models: ModelConfig[], preferences: any): ModelConfig[] {
+function applyUserPreferences(models: ModelConfig[], preferences: RoutingPreferences): ModelConfig[] {
   let filteredModels = [...models];
 
   // Filter by allowed categories
   if (preferences.allowedCategories && preferences.allowedCategories.length > 0) {
     filteredModels = filteredModels.filter(model =>
-      preferences.allowedCategories.includes(model.category)
+      preferences.allowedCategories!.includes(model.category)
     );
   }
 
   // Filter out excluded models
   if (preferences.excludedModels && preferences.excludedModels.length > 0) {
     filteredModels = filteredModels.filter(model =>
-      !preferences.excludedModels.includes(model.id)
+      !preferences.excludedModels!.includes(model.id)
     );
   }
 
@@ -191,7 +194,7 @@ function applyUserPreferences(models: ModelConfig[], preferences: any): ModelCon
 /**
  * Create the router prompt with available models and analysis criteria
  */
-function createRouterPrompt(message: string, availableModels: ModelConfig[], userPrefs?: any): string {
+function createRouterPrompt(message: string, availableModels: ModelConfig[], userPrefs: RoutingPreferences): string {
   const modelInfo = availableModels.map(model => ({
     id: model.id,
     name: model.name,
@@ -202,10 +205,21 @@ function createRouterPrompt(message: string, availableModels: ModelConfig[], use
     speed: model.speed
   }));
 
+  const userPreferencesInfo = userPrefs.allowedCategories && userPrefs.allowedCategories.length > 0
+    ? `User prefers these categories: ${userPrefs.allowedCategories.join(', ')}`
+    : 'No category preferences specified';
+
   return `
 Analyze this user message and select the most appropriate AI model from the available options:
 
 USER MESSAGE: "${message}"
+
+USER PREFERENCES:
+- Priority: ${userPrefs.priority}
+- ${userPreferencesInfo}
+${userPrefs.excludedModels && userPrefs.excludedModels.length > 0
+    ? `- Excluded models: ${userPrefs.excludedModels.join(', ')}`
+    : '- No excluded models'}
 
 AVAILABLE MODELS:
 ${JSON.stringify(modelInfo, null, 2)}
@@ -213,17 +227,18 @@ ${JSON.stringify(modelInfo, null, 2)}
 SELECTION CRITERIA:
 1. Task Type: Determine if this is coding, reasoning, creative writing, analysis, or general conversation
 2. Context Requirements: Estimate how much context window is needed based on message complexity
-3. Speed vs Quality: Balance response speed with task requirements
+3. Speed vs Quality: Balance response speed with task requirements based on user priority (${userPrefs.priority})
 4. Model Strengths: Match the model's strengths to the task requirements
+5. User Preferences: Respect user's category preferences and model exclusions
 
 Return your decision as JSON with this exact format:
 {
   "modelId": "exact-model-id-from-available-models",
-  "reasoning": "detailed explanation of why this model was chosen",
+  "reasoning": "detailed explanation of why this model was chosen, considering user preferences",
   "confidence": 0.0-1.0
 }
 
-Choose the model that best fits the user's needs while considering efficiency and available resources.`;
+Choose the model that best fits the user's needs while considering their preferences and available resources.`;
 }
 
 /**
