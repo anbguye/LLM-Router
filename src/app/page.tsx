@@ -4,11 +4,48 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Send } from 'lucide-react'
+import { MessageBubble } from '@/components/MessageBubble'
+import 'highlight.js/styles/github-dark.css'
+
+// UI constants
+const ANIMATION_DELAY_1 = '0.1s';
+const ANIMATION_DELAY_2 = '0.2s';
+const MAX_MESSAGE_WIDTH_PERCENT = 70;
+
+// Markdown styling constants
+const MARKDOWN_PROSE_CLASSES = `
+  prose prose-invert prose-sm max-w-none
+  prose-headings:text-slate-100 prose-headings:font-semibold
+  prose-p:text-slate-200 prose-p:leading-relaxed
+  prose-strong:text-slate-100 prose-strong:font-semibold
+  prose-code:text-slate-200 prose-code:bg-slate-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:before:content-none prose-code:after:content-none
+  prose-pre:bg-slate-900 prose-pre:border prose-pre:border-slate-700
+  prose-blockquote:text-slate-300 prose-blockquote:border-l-slate-500
+  prose-ul:text-slate-200 prose-ol:text-slate-200
+  prose-li:text-slate-200
+  prose-table:text-slate-200
+  prose-th:text-slate-100 prose-th:bg-slate-800
+  prose-td:text-slate-200 prose-td:border-slate-700
+`.trim();
 
 interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
+  model?: string
+  reasoning?: string
+  tokensUsed?: number
+  processingTime?: number
+  timestamp?: string
+}
+
+interface ChatApiResponse {
+  content: string
+  model: string
+  reasoning: string
+  tokensUsed?: number
+  processingTime: number
+  timestamp: string
 }
 
 export default function ChatPage() {
@@ -16,17 +53,14 @@ export default function ChatPage() {
     {
       id: '1',
       role: 'assistant',
-      content: 'Hello! How can I help you today?'
-    },
-    {
-      id: '2',
-      role: 'user',
-      content: 'I need help with implementing a chat UI.'
-    },
-    {
-      id: '3',
-      role: 'assistant',
-      content: 'I can help you with that! What specific features are you looking for in your chat interface?'
+      content: `# 🤖 Intelligent LLM Router
+
+Hello! I'm an intelligent LLM router that automatically selects the best AI model for your questions.
+## What I can help with:
+- **Coding**: Programming problems, debugging, code review
+- **Reasoning**: Complex analysis, problem-solving, mathematics
+- **Creative Writing**: Stories, content creation, brainstorming
+- **General Questions**: Any topic you need help with`
     }
   ])
   const [input, setInput] = useState('')
@@ -48,18 +82,23 @@ export default function ChatPage() {
   })
 
   /**
-   * Generates a random dummy response for testing purposes
-   * Includes the user's message in the response for context
+   * Calls the intelligent LLM router API
    */
-  const generateDummyResponse = (userMessage: string): string => {
-    const responses = [
-      "I understand you're asking about: \"" + userMessage + "\". This is a placeholder response for testing purposes.",
-      "Thanks for your message: \"" + userMessage + "\". I'm currently in testing mode and will provide a simulated response.",
-      "Your input: \"" + userMessage + "\" has been received. This is a dummy AI response to test the chat functionality.",
-      "Processing your message: \"" + userMessage + "\". Here's a placeholder response while the AI system is being developed.",
-      "Message received: \"" + userMessage + "\". This is a test response to verify the chat interface is working correctly."
-    ]
-    return responses[Math.floor(Math.random() * responses.length)]
+  const callChatAPI = async (userMessage: string): Promise<ChatApiResponse> => {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message: userMessage }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
+
+    return response.json();
   }
 
   const addMessage = (message: Message) => {
@@ -82,17 +121,41 @@ export default function ChatPage() {
   }
 
   /**
-   * Simulates an AI response with a random delay to mimic real API behavior
+   * Handles AI response from the intelligent router
    * @param userMessage - The user's message to respond to
    */
-  const simulateAiResponse = (userMessage: string) => {
-    const delay = 1000 + Math.random() * 2000 // Random delay between 1-3 seconds
+  const handleAiResponse = async (userMessage: string) => {
+    try {
+      const apiResponse = await callChatAPI(userMessage);
 
-    setTimeout(() => {
-      const aiResponse = createMessage(generateDummyResponse(userMessage), 'assistant')
-      addMessage(aiResponse)
-      setIsLoading(false)
-    }, delay)
+      const aiMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: apiResponse.content,
+        model: apiResponse.model,
+        reasoning: apiResponse.reasoning,
+        tokensUsed: apiResponse.tokensUsed,
+        processingTime: apiResponse.processingTime,
+        timestamp: apiResponse.timestamp
+      };
+
+      addMessage(aiMessage);
+    } catch (error) {
+      console.error('API call failed:', error);
+
+      // Create error message
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`,
+        model: 'Error',
+        reasoning: 'API call failed'
+      };
+
+      addMessage(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   const handleSendMessage = async () => {
@@ -100,7 +163,7 @@ export default function ChatPage() {
     if (!userMessage) return
 
     sendUserMessage(userMessage)
-    simulateAiResponse(userMessage)
+    handleAiResponse(userMessage)
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -122,29 +185,23 @@ export default function ChatPage() {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-transparent to-slate-900/20">
           {messages.map((message) => (
-            <div
+            <MessageBubble
               key={message.id}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[70%] rounded-lg p-3 shadow-lg ${
-                  message.role === 'user' ? MESSAGE_STYLES.user : MESSAGE_STYLES.assistant
-                }`}
-              >
-                <p className="text-sm">{message.content}</p>
-              </div>
-            </div>
+              message={message}
+              maxWidthPercent={MAX_MESSAGE_WIDTH_PERCENT}
+              markdownClasses={MARKDOWN_PROSE_CLASSES}
+            />
           ))}
           
           {/* Loading indicator */}
           {isLoading && (
             <div className="flex justify-start">
-              <div className={`${MESSAGE_STYLES.loading} rounded-lg p-3 shadow-lg max-w-[70%]`}>
+              <div className={`${MESSAGE_STYLES.loading} rounded-lg p-3 shadow-lg`} style={{ maxWidth: `${MAX_MESSAGE_WIDTH_PERCENT}%` }}>
                 <div className="flex items-center space-x-2">
                   <div className="flex space-x-1">
                     <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                    <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                    <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: ANIMATION_DELAY_1}}></div>
+                    <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: ANIMATION_DELAY_2}}></div>
                   </div>
                   <span className="text-sm text-slate-400">AI is thinking...</span>
                 </div>

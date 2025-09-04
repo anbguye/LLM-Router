@@ -1,67 +1,221 @@
-# Next.js Template
+# 🤖 Intelligent LLM Router
 
-This is a template repository showcasing Next.js Server Actions, React Server Components, and modern data fetching patterns. The project includes a Todo list implementation and examples of API integration with proper loading states and error handling.
+An intelligent chat application that automatically routes user queries to the most appropriate AI model from a pool of 12+ free models available through OpenRouter. The system analyzes user input, considers context requirements, and selects the optimal model for each task while respecting rate limits.
 
-## Features
+## ✨ Features
 
-- **Todo List**: Server-side data mutations using Next.js Server Actions
-- **Data Fetching Example**: Demonstrates React Suspense and loading states
-- **Modern UI**: Built with Shadcn UI components and Tailwind CSS
-- **Error Handling**: Proper error boundaries and user feedback
-- **Type Safety**: Full TypeScript support
+- **🧠 Intelligent Model Selection**: Automatically chooses the best AI model based on:
+  - Task type (coding, reasoning, creative writing, analysis)
+  - Context requirements and message complexity
+  - Model strengths and capabilities
+  - Response speed vs. quality balance
 
-## Tech Stack
+- **📊 Transparent Routing**: Shows users which model was selected and why
+- **⚡ Rate Limit Management**: Handles OpenRouter's 20 requests/minute limit with intelligent fallbacks
+- **🎨 Rich Markdown Support**: Full markdown rendering with syntax highlighting for code blocks
+- **📈 Performance Metrics**: Displays processing time and token usage
+- **🛡️ Robust Error Handling**: Multiple fallback strategies ensure reliability
+- **🎯 Model Pool**: Access to 12+ free models from providers like DeepSeek, Meta, Google, Qwen, and more
 
-- [Next.js](https://nextjs.org) - React framework
-- [Shadcn UI](https://ui.shadcn.com/) - Component library
-- [Tailwind CSS](https://tailwindcss.com) - Styling
-- [TypeScript](https://www.typescriptlang.org/) - Type safety
+## 🚀 Tech Stack
 
-## Getting Started
+- **[Next.js 15](https://nextjs.org)** - React framework with App Router
+- **[OpenRouter API](https://openrouter.ai)** - Unified access to multiple LLM providers
+- **[React Markdown](https://github.com/remarkjs/react-markdown)** - Markdown rendering
+- **[Shadcn UI](https://ui.shadcn.com/)** - Modern component library
+- **[Tailwind CSS](https://tailwindcss.com)** - Utility-first styling
+- **[TypeScript](https://www.typescriptlang.org/)** - Type safety
+- **[Highlight.js](https://highlightjs.org/)** - Code syntax highlighting
 
-1. Clone the repository
-2. Install dependencies:
+## 🏁 Quick Start
 
+### Prerequisites
+- Node.js 18+
+- npm/yarn/pnpm
+- OpenRouter API key (free at [openrouter.ai](https://openrouter.ai))
+
+### Installation
+
+1. **Clone the repository**
+```bash
+git clone https://github.com/anbguye/Intelligent-LLM-Router.git
+cd Intelligent-LLM-Router
+```
+
+2. **Install dependencies**
 ```bash
 npm install
-# or
-yarn install
-# or
-pnpm install
 ```
 
-3. Set up your environment variables in the `.env` file.
+3. **Set up environment variables**
 
-4. Start the development server:
+Create a `.env` file in the root directory:
+```env
+OPENROUTER_API_KEY=sk-or-v1-your-api-key-here
+```
 
+Get your free API key from [OpenRouter](https://openrouter.ai/keys).
+
+4. **Start the development server**
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
+5. **Open your browser**
 
-## Project Structure
+Navigate to [http://localhost:3001](http://localhost:3001) to start chatting!
 
-- `app/page.tsx` - Main page with Todo list implementation
-- `app/example/page.tsx` - Data fetching example with loading states
-- `app/actions/*` - Server Actions for data mutations
-- `components/ui/*` - Shadcn UI components
+## 🎯 How It Works
 
-## Learn More
+### Intelligent Routing Process
 
-To learn more about the technologies used in this project:
+1. **Input Analysis**: Fast router model analyzes your message
+2. **Model Selection**: Chooses optimal model from available pool
+3. **API Call**: Routes request to selected model via OpenRouter
+4. **Response Processing**: Formats response with routing metadata
+5. **Display**: Shows beautifully formatted response with model info
 
-- [Next.js Documentation](https://nextjs.org/docs) - Next.js features and API
-- [Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions) - Learn about Next.js Server Actions
-- [Shadcn UI Documentation](https://ui.shadcn.com) - Learn about Shadcn UI components
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs) - Learn about Tailwind CSS
+### Available Models
 
-## Deploy on Vercel
+The router intelligently selects from these free models:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme).
+| Category | Example Models | Best For |
+|----------|----------------|----------|
+| **Coding** | Qwen3 Coder, DeepCoder | Programming, debugging, code review |
+| **Reasoning** | DeepSeek R1, Qwen3 235B | Complex analysis, mathematics |
+| **Creative** | Llama 3.3 70B, Mistral Small | Writing, brainstorming, content creation |
+| **General** | Mistral Small 3.2, DeepSeek V3 | Everyday questions, explanations |
+| **Analysis** | Gemini 2.5 Pro, Qwen3 235B | Long documents, research, complex tasks |
 
-Check out the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📁 Project Structure
+
+```
+src/
+├── app/
+│   ├── api/chat/
+│   │   └── route.ts          # Main chat API endpoint
+│   ├── page.tsx              # Main chat interface
+│   └── layout.tsx            # App layout
+├── components/
+│   ├── ui/                   # Shadcn UI components
+│   └── MessageBubble.tsx     # Message rendering component
+├── config/
+│   └── models.ts             # Model configurations
+├── utils/
+│   ├── router.ts             # Core routing logic
+│   ├── rateLimiter.ts        # Rate limiting system
+│   └── logger.ts             # Logging utility
+└── lib/
+    └── utils.ts              # Utility functions
+```
+
+## 🔧 API Reference
+
+### POST `/api/chat`
+Send a message to be intelligently routed to the best AI model.
+
+**Request Body:**
+```json
+{
+  "message": "Your question or prompt here"
+}
+```
+
+**Response:**
+```json
+{
+  "content": "AI response with full markdown formatting",
+  "model": "Selected model name",
+  "reasoning": "Why this model was chosen",
+  "tokensUsed": 150,
+  "processingTime": 1250,
+  "timestamp": "2025-01-04T20:30:00.000Z"
+}
+```
+
+### GET `/api/chat`
+Get router status and current rate limit information.
+
+**Response:**
+```json
+{
+  "status": "operational",
+  "rateLimit": {
+    "currentCount": 5,
+    "maxRequests": 20,
+    "timeUntilReset": 45000,
+    "isLimited": false
+  },
+  "availableModels": 12,
+  "routerModel": "Mistral Small 3"
+}
+```
+
+## 💡 Usage Examples
+
+### Coding Questions
+```
+User: "How do I solve the Two Sum problem on LeetCode?"
+Router: Selects Qwen3 Coder (specialized for programming)
+Response: Formatted code solution with syntax highlighting
+```
+
+### Complex Reasoning
+```
+User: "Explain quantum computing in simple terms"
+Router: Selects DeepSeek R1 (excellent for explanations)
+Response: Clear, structured explanation with examples
+```
+
+### Creative Writing
+```
+User: "Write a short story about AI taking over the world"
+Router: Selects Llama 3.3 70B (creative writing specialist)
+Response: Engaging story with proper formatting
+```
+
+## 🔒 Security & Rate Limiting
+
+- **Rate Limiting**: 20 requests/minute across all models (OpenRouter limit)
+- **Input Validation**: Message length limits and sanitization
+- **Error Handling**: Graceful fallbacks and user-friendly error messages
+- **API Security**: Keys secured via environment variables
+- **Request Monitoring**: Comprehensive logging for debugging
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+1. Push to GitHub
+2. Connect to Vercel
+3. Add `OPENROUTER_API_KEY` environment variable
+4. Deploy!
+
+### Other Platforms
+The app can be deployed to any platform supporting Next.js:
+- Netlify
+- Railway
+- DigitalOcean App Platform
+- Self-hosted with Docker
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+## 🙏 Acknowledgments
+
+- [OpenRouter](https://openrouter.ai) for providing unified access to multiple LLM providers
+- [Vercel](https://vercel.com) for hosting infrastructure
+- [Shadcn](https://ui.shadcn.com) for beautiful UI components
+- All the open-source LLM providers making this possible
+
+---
+
+**Try it out!** Ask the router anything and watch it intelligently select the perfect model for your question. The system learns from each interaction to make better routing decisions over time.
