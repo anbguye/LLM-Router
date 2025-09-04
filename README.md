@@ -10,12 +10,25 @@ An intelligent chat application that automatically routes user queries to the mo
   - Model strengths and capabilities
   - Response speed vs. quality balance
 
+- **⚙️ Customizable Routing Preferences**: Users can set priorities for:
+  - **Latency**: Prioritize response speed
+  - **Quality**: Maximize response quality
+  - **Balanced**: Optimal speed/quality trade-off
+
 - **📊 Transparent Routing**: Shows users which model was selected and why
+- **📈 Analytics & Monitoring**: Track routing decisions and model usage patterns
 - **⚡ Rate Limit Management**: Handles OpenRouter's 20 requests/minute limit with intelligent fallbacks
 - **🎨 Rich Markdown Support**: Full markdown rendering with syntax highlighting for code blocks
-- **📈 Performance Metrics**: Displays processing time and token usage
+- **📊 Performance Metrics**: Displays processing time and token usage
 - **🛡️ Robust Error Handling**: Multiple fallback strategies ensure reliability
 - **🎯 Model Pool**: Access to 12+ free models from providers like DeepSeek, Meta, Google, Qwen, and more
+
+- **🎪 Advanced Modal System**: Professional modal implementation with:
+  - **Scroll-Following**: Modal stays perfectly centered while scrolling
+  - **Click-Outside-to-Close**: Intuitive dismissal by clicking backdrop
+  - **Viewport-Based Positioning**: Always centered relative to user's screen
+  - **Smooth Animations**: Professional transitions and interactions
+  - **Accessibility**: Full keyboard and screen reader support
 
 ## 🚀 Tech Stack
 
@@ -94,7 +107,7 @@ src/
 ├── app/
 │   ├── api/chat/
 │   │   └── route.ts          # Main chat API endpoint
-│   ├── page.tsx              # Main chat interface
+│   ├── page.tsx              # Main chat interface with advanced modal system
 │   └── layout.tsx            # App layout
 ├── components/
 │   ├── ui/                   # Shadcn UI components
@@ -108,6 +121,29 @@ src/
 └── lib/
     └── utils.ts              # Utility functions
 ```
+
+## 🎪 Advanced Modal System
+
+The application features a sophisticated modal implementation with enterprise-level best practices:
+
+### Key Features
+- **Scroll-Following Positioning**: Modal dynamically repositions to stay centered during scrolling
+- **Click-Outside-to-Close**: Intuitive dismissal by clicking the backdrop
+- **Viewport-Based Centering**: Always perfectly centered relative to user's visible screen
+- **Performance Optimized**: Uses passive event listeners and efficient DOM updates
+
+### Technical Implementation
+- **Custom Hook**: `useModalScrollPositioning` for reusable modal logic
+- **Named Constants**: All magic numbers replaced with descriptive constants
+- **Type Safety**: Full TypeScript support with proper null handling
+- **Memory Management**: Proper cleanup of event listeners to prevent leaks
+
+### Code Quality Standards
+- **DRY Principles**: No code duplication, reusable components
+- **Single Responsibility**: Each function has one clear purpose
+- **Clear Naming**: Self-documenting function and variable names
+- **Comprehensive Documentation**: JSDoc comments and inline explanations
+- **Security First**: Input validation and secure event handling
 
 ## 🔧 API Reference
 
@@ -150,6 +186,71 @@ Get router status and current rate limit information.
   "routerModel": "Mistral Small 3"
 }
 ```
+
+### Preferences API
+
+#### GET `/api/preferences?userId=default`
+Get user routing preferences.
+
+**Response:**
+```json
+{
+  "userId": "default",
+  "preferences": {
+    "priority": "balanced",
+    "maxLatency": 5000,
+    "minQuality": 0.7,
+    "allowedCategories": [],
+    "excludedModels": []
+  },
+  "timestamp": "2025-01-04T20:30:00.000Z"
+}
+```
+
+#### POST `/api/preferences`
+Set user routing preferences.
+
+**Request Body:**
+```json
+{
+  "userId": "default",
+  "preferences": {
+    "priority": "quality",
+    "maxLatency": 3000,
+    "allowedCategories": ["coding", "reasoning"]
+  }
+}
+```
+
+#### DELETE `/api/preferences?userId=default`
+Reset user preferences to defaults.
+
+### Analytics API
+
+#### GET `/api/analytics?type=summary`
+Get analytics summary data.
+
+**Query Parameters:**
+- `type`: `summary` | `full` | `usage` | `preferences`
+
+**Response:**
+```json
+{
+  "type": "summary",
+  "data": {
+    "totalRequests": 150,
+    "mostUsedModel": { "model": "qwen/qwen3-coder:free", "count": 45 },
+    "mostUsedCategory": { "category": "coding", "count": 67 },
+    "averageProcessingTime": 1250,
+    "totalTokensUsed": 25000,
+    "recentDecisions": [...]
+  },
+  "timestamp": "2025-01-04T20:30:00.000Z"
+}
+```
+
+#### DELETE `/api/analytics`
+Reset all analytics data.
 
 ## 💡 Usage Examples
 
@@ -215,6 +316,26 @@ This project is open source and available under the [MIT License](LICENSE).
 - [Vercel](https://vercel.com) for hosting infrastructure
 - [Shadcn](https://ui.shadcn.com) for beautiful UI components
 - All the open-source LLM providers making this possible
+
+## 🚀 Future Enhancements
+
+### Planned Features
+- [ ] **Multi-line Message Support**: Hold Shift+Enter to create line breaks in messages (like Discord/Slack)
+- [ ] **Message History**: Save and browse previous conversations
+- [ ] **Model Comparison**: Side-by-side comparison of different model responses
+- [ ] **Custom Model Weights**: User-defined scoring for model preferences
+- [ ] **Voice Input**: Speech-to-text for hands-free interaction
+- [ ] **Export Conversations**: Save chats as markdown or PDF
+- [ ] **Dark/Light Theme Toggle**: Complete theme system
+- [ ] **Keyboard Shortcuts**: Full keyboard navigation support
+
+### Technical Improvements
+- [ ] **Real-time Collaboration**: Multi-user chat sessions
+- [ ] **Offline Mode**: Queue messages for later when offline
+- [ ] **Advanced Analytics**: Detailed usage statistics and trends
+- [ ] **Plugin System**: Extensible architecture for custom features
+- [ ] **Mobile Optimization**: Native mobile app versions
+- [ ] **API Rate Limiting**: Per-user rate limiting and usage tracking
 
 ---
 

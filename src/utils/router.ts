@@ -3,6 +3,9 @@ import { env } from '@/config/env';
 import { AVAILABLE_MODELS, ROUTER_MODEL, ModelConfig, getModelsByContextRequirement, getFastestModels } from '@/config/models';
 import { rateLimiter } from '@/utils/rateLimiter';
 import { Logger } from '@/utils/logger';
+import { preferencesManager } from '@/utils/preferencesManager';
+import { analytics } from '@/utils/analytics';
+import { PRIORITY_WEIGHTS } from '@/config/routingPreferences';
 
 const logger = new Logger('Router');
 
@@ -39,7 +42,7 @@ export interface ChatResponse {
 /**
  * Analyze user input to determine the best model for the task
  */
-async function analyzeAndRoute(message: string): Promise<RouterDecision> {
+async function analyzeAndRoute(message: string, userId: string = 'default'): Promise<RouterDecision> {
   const startTime = Date.now();
 
   try {
@@ -55,6 +58,9 @@ async function analyzeAndRoute(message: string): Promise<RouterDecision> {
       };
     }
 
+    // Get user preferences
+    const userPrefs = preferencesManager.getUserPreferences(userId);
+
     // Estimate context requirements based on message length
     const estimatedTokens = Math.ceil(message.length / TOKEN_ESTIMATION_RATIO);
     const contextMultiplier = estimatedTokens > CONTEXT_MULTIPLIER_THRESHOLD ? CONTEXT_MULTIPLIER_FACTOR : 1;
@@ -68,8 +74,22 @@ async function analyzeAndRoute(message: string): Promise<RouterDecision> {
       availableModels = AVAILABLE_MODELS.sort((a, b) => b.contextWindow - a.contextWindow).slice(0, 5);
     }
 
-    // Create router prompt
-    const routerPrompt = createRouterPrompt(message, availableModels);
+    // Apply user preferences filtering
+    availableModels = applyUserPreferences(availableModels, userPrefs);
+
+    if (availableModels.length === 0) {
+      logger.warn('No models available after preference filtering, using fallback');
+      const fastestModels = getFastestModels();
+      return {
+        selectedModel: fastestModels[0],
+        reasoning: 'No models available after applying user preferences, using fastest fallback',
+        confidence: 0.3,
+        alternatives: fastestModels.slice(1)
+      };
+    }
+
+    // Create router prompt with preference context
+    const routerPrompt = createRouterPrompt(message, availableModels, userPrefs);
 
     // Get decision from router model
     const completion = await openai.chat.completions.create({
@@ -77,7 +97,13 @@ async function analyzeAndRoute(message: string): Promise<RouterDecision> {
       messages: [
         {
           role: 'system',
-          content: 'You are an expert AI model router. Analyze the user\'s message and select the most appropriate model from the available options. Consider the task type, complexity, context requirements, and model strengths. Return your decision as JSON with the selected model ID, reasoning, and confidence score.'
+          content: `You are an expert AI model router. Analyze the user's message and select the most appropriate model from the available options.
+
+User Preferences:
+- Priority: ${userPrefs.priority}
+- Consider cost, latency, and quality based on the priority setting
+
+Return your decision as JSON with the selected model ID, reasoning, and confidence score.`
         },
         {
           role: 'user',
@@ -111,6 +137,8 @@ async function analyzeAndRoute(message: string): Promise<RouterDecision> {
     const processingTime = Date.now() - startTime;
     logger.info('Router decision made', {
       selectedModel: selectedModel.name,
+      userId,
+      priority: userPrefs.priority,
       confidence: decision.confidence,
       processingTime
     });
@@ -137,9 +165,33 @@ async function analyzeAndRoute(message: string): Promise<RouterDecision> {
 }
 
 /**
+ * Apply user preferences to filter available models
+ */
+function applyUserPreferences(models: ModelConfig[], preferences: any): ModelConfig[] {
+  let filteredModels = [...models];
+
+  // Filter by allowed categories
+  if (preferences.allowedCategories && preferences.allowedCategories.length > 0) {
+    filteredModels = filteredModels.filter(model =>
+      preferences.allowedCategories.includes(model.category)
+    );
+  }
+
+  // Filter out excluded models
+  if (preferences.excludedModels && preferences.excludedModels.length > 0) {
+    filteredModels = filteredModels.filter(model =>
+      !preferences.excludedModels.includes(model.id)
+    );
+  }
+
+  // If no models left after filtering, return original list
+  return filteredModels.length > 0 ? filteredModels : models;
+}
+
+/**
  * Create the router prompt with available models and analysis criteria
  */
-function createRouterPrompt(message: string, availableModels: ModelConfig[]): string {
+function createRouterPrompt(message: string, availableModels: ModelConfig[], userPrefs?: any): string {
   const modelInfo = availableModels.map(model => ({
     id: model.id,
     name: model.name,
@@ -231,17 +283,31 @@ async function callSelectedModel(message: string, modelConfig: ModelConfig): Pro
 /**
  * Main routing function that handles the entire flow
  */
-export async function routeAndRespond(message: string): Promise<ChatResponse> {
+export async function routeAndRespond(message: string, userId: string = 'default'): Promise<ChatResponse> {
   const startTime = Date.now();
 
   try {
     // Step 1: Analyze and route
-    const decision = await analyzeAndRoute(message);
+    const decision = await analyzeAndRoute(message, userId);
 
     // Step 2: Call selected model
     const response = await callSelectedModel(message, decision.selectedModel);
 
-    // Step 3: Return enriched response
+    // Step 3: Log analytics
+    const userPrefs = preferencesManager.getUserPreferences(userId);
+    analytics.logRoutingDecision(
+      message,
+      decision.selectedModel.id,
+      decision.selectedModel.category,
+      decision.reasoning,
+      decision.confidence,
+      response.processingTime,
+      response.tokensUsed || 0,
+      0, // estimatedCost - all models are free
+      userPrefs.priority
+    );
+
+    // Step 4: Return enriched response
     return {
       ...response,
       reasoning: decision.reasoning,
@@ -255,6 +321,19 @@ export async function routeAndRespond(message: string): Promise<ChatResponse> {
     try {
       const fallbackModel = getFastestModels()[0];
       const fallbackResponse = await callSelectedModel(message, fallbackModel);
+
+      // Log fallback analytics
+      analytics.logRoutingDecision(
+        message,
+        fallbackModel.id,
+        fallbackModel.category,
+        'Fallback due to routing failure',
+        0.2,
+        fallbackResponse.processingTime,
+        fallbackResponse.tokensUsed || 0,
+        0,
+        'balanced'
+      );
 
       return {
         ...fallbackResponse,
