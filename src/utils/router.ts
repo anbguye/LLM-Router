@@ -77,8 +77,10 @@ async function analyzeAndRoute(message: string, userId: string = 'default'): Pro
       availableModels = AVAILABLE_MODELS.sort((a, b) => b.contextWindow - a.contextWindow).slice(0, 5);
     }
 
-    // Apply user preferences filtering
-    availableModels = applyUserPreferences(availableModels, userPrefs);
+    // Apply user preferences filtering (skip for auto mode)
+    if (userPrefs.priority !== 'auto') {
+      availableModels = applyUserPreferences(availableModels, userPrefs);
+    }
 
     if (availableModels.length === 0) {
       logger.warn('No models available after preference filtering, using fallback');
@@ -104,7 +106,10 @@ async function analyzeAndRoute(message: string, userId: string = 'default'): Pro
 
 User Preferences:
 - Priority: ${userPrefs.priority}
-- Consider cost, latency, and quality based on the priority setting
+${userPrefs.priority === 'auto'
+    ? '- Auto mode: Make the best decision without user preference constraints'
+    : '- Consider cost, latency, and quality based on the priority setting'
+}
 
 Return your decision as JSON with the selected model ID, reasoning, and confidence score.`
         },

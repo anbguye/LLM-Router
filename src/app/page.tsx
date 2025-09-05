@@ -65,8 +65,6 @@ interface ChatApiResponse {
 
 interface PreferencesData {
   priority: string;
-  maxLatency?: number;
-  minQuality?: number;
   allowedCategories: string[];
   excludedModels: string[];
 }
@@ -106,9 +104,7 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
   const [isLoading, setIsLoading] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [preferences, setPreferences] = useState<PreferencesData>({
-    priority: 'balanced',
-    maxLatency: 5000,
-    minQuality: 0.7,
+    priority: 'auto',
     allowedCategories: [],
     excludedModels: []
   })
@@ -402,6 +398,23 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
   useModalScrollPositioning(modalRef, showSettings);
 
   /**
+   * Get routing weight percentage for display
+   * @param weightType - Either 'latency' or 'quality'
+   * @param priority - The current routing priority
+   * @returns Weight percentage as number
+   */
+  const getRoutingWeight = (weightType: 'latency' | 'quality', priority: string): number => {
+    const weights = {
+      auto: { latency: 50, quality: 50 },
+      latency: { latency: 80, quality: 20 },
+      quality: { latency: 20, quality: 80 },
+      balanced: { latency: 50, quality: 50 }
+    };
+
+    return weights[priority as keyof typeof weights]?.[weightType] || 50;
+  };
+
+  /**
    * Load data when settings panel opens
    */
   useEffect(() => {
@@ -539,9 +552,15 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
                           <Label htmlFor="priority" className="text-slate-200">Routing Priority</Label>
                           <Select value={preferences.priority} onValueChange={(value) => setPreferences({...preferences, priority: value})}>
                             <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-200">
-                              <SelectValue placeholder="Select priority" />
+                              <SelectValue>
+                                {preferences.priority === 'auto' && 'Auto (Let Router Decide)'}
+                                {preferences.priority === 'latency' && 'Latency (Fastest Response)'}
+                                {preferences.priority === 'quality' && 'Quality (Best Response)'}
+                                {preferences.priority === 'balanced' && 'Balanced (Speed & Quality)'}
+                              </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
+                              <SelectItem value="auto">Auto (Let Router Decide)</SelectItem>
                               <SelectItem value="latency">Latency (Fastest Response)</SelectItem>
                               <SelectItem value="quality">Quality (Best Response)</SelectItem>
                               <SelectItem value="balanced">Balanced (Speed & Quality)</SelectItem>
@@ -549,37 +568,21 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
                           </Select>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="maxLatency" className="text-slate-200">Max Latency (ms)</Label>
-                            <Input
-                              id="maxLatency"
-                              type="number"
-                              value={preferences.maxLatency || ''}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                setPreferences({...preferences, maxLatency: value ? parseInt(value) : undefined});
-                              }}
-                              className="bg-slate-800 border-slate-600 text-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
-                              placeholder="5000"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="minQuality" className="text-slate-200">Min Quality (0-1)</Label>
-                            <Input
-                              id="minQuality"
-                              type="number"
-                              step="0.1"
-                              min="0"
-                              max="1"
-                              value={preferences.minQuality || ''}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                setPreferences({...preferences, minQuality: value ? parseFloat(value) : undefined});
-                              }}
-                              className="bg-slate-800 border-slate-600 text-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
-                              placeholder="0.7"
-                            />
+                        <div className="space-y-3">
+                          <Label className="text-slate-200">Current Routing Settings</Label>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-slate-800/50 border border-slate-600 rounded-md p-3">
+                              <div className="text-xs text-slate-400 mb-1">Latency Weight</div>
+                              <div className="text-lg font-semibold text-slate-200">
+                                {getRoutingWeight('latency', preferences.priority)}%
+                              </div>
+                            </div>
+                            <div className="bg-slate-800/50 border border-slate-600 rounded-md p-3">
+                              <div className="text-xs text-slate-400 mb-1">Quality Weight</div>
+                              <div className="text-lg font-semibold text-slate-200">
+                                {getRoutingWeight('quality', preferences.priority)}%
+                              </div>
+                            </div>
                           </div>
                         </div>
 

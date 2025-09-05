@@ -11,11 +11,13 @@ An intelligent chat application that automatically routes user queries to the mo
   - Response speed vs. quality balance
 
 - **⚙️ Customizable Routing Preferences**: Users can set priorities for:
+  - **Auto**: Let the router intelligently decide (default)
   - **Latency**: Prioritize response speed
   - **Quality**: Maximize response quality
   - **Balanced**: Optimal speed/quality trade-off
 
 - **📊 Transparent Routing**: Shows users which model was selected and why
+- **⚙️ Real-time Settings Display**: Shows current routing weights (latency vs quality) based on selected priority
 - **📈 Analytics & Monitoring**: Track routing decisions and model usage patterns
 - **⚡ Rate Limit Management**: Handles OpenRouter's 20 requests/minute limit with intelligent fallbacks
 - **🎨 Rich Markdown Support**: Full markdown rendering with syntax highlighting for code blocks
@@ -197,9 +199,7 @@ Get user routing preferences.
 {
   "userId": "default",
   "preferences": {
-    "priority": "balanced",
-    "maxLatency": 5000,
-    "minQuality": 0.7,
+    "priority": "auto",
     "allowedCategories": [],
     "excludedModels": []
   },
@@ -216,7 +216,6 @@ Set user routing preferences.
   "userId": "default",
   "preferences": {
     "priority": "quality",
-    "maxLatency": 3000,
     "allowedCategories": ["coding", "reasoning"]
   }
 }

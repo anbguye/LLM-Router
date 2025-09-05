@@ -55,13 +55,9 @@ class PreferencesManager {
 
     // Cost validation removed since all models are free
 
-    if (preferences.maxLatency && preferences.maxLatency < 0) {
-      throw new Error('maxLatency must be non-negative');
-    }
 
-    if (preferences.minQuality && (preferences.minQuality < 0 || preferences.minQuality > 1)) {
-      throw new Error('minQuality must be between 0 and 1');
-    }
+
+
   }
 
   /**
@@ -80,6 +76,7 @@ class PreferencesManager {
    */
   getPreferenceStats() {
     const priorities: Record<RoutingPriority, number> = {
+      auto: 0,
       cost: 0,
       latency: 0,
       quality: 0,
@@ -94,10 +91,7 @@ class PreferencesManager {
       totalUsers++;
 
       // Check if user has custom settings
-      const defaultPrefs = DEFAULT_ROUTING_PREFERENCES;
       if (
-        prefs.maxLatency !== defaultPrefs.maxLatency ||
-        prefs.minQuality !== defaultPrefs.minQuality ||
         (prefs.allowedCategories && prefs.allowedCategories.length > 0) ||
         (prefs.excludedModels && prefs.excludedModels.length > 0)
       ) {
