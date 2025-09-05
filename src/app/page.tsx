@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Send, Settings, BarChart3, X } from 'lucide-react'
+import { Send, Settings, X } from 'lucide-react'
 import { MessageBubble } from '@/components/MessageBubble'
 import 'highlight.js/styles/github-dark.css'
 
@@ -22,6 +22,10 @@ const MODAL_MAX_HEIGHT = '80vh';
 const MODAL_CENTERING_OFFSET = 10;
 const MODAL_VIEWPORT_PADDING = 30;
 const MODAL_RENDER_DELAY = 10;
+
+// Settings constants
+const SETTINGS_TAB_HEIGHT = '300px';
+const AUTO_RESET_DELAY_MS = 2000;
 
 // Markdown styling constants
 const MARKDOWN_PROSE_CLASSES = `
@@ -116,7 +120,8 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
     totalTokensUsed: 0,
     recentDecisions: []
   })
-  const [isSaving, setIsSaving] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'confirm' | 'saving' | 'saved'>('idle')
+  const [resetStatus, setResetStatus] = useState<'idle' | 'confirm' | 'resetting' | 'reset'>('idle')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
 
@@ -125,15 +130,6 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
     assistant: 'bg-gradient-to-r from-slate-700 to-slate-600 text-slate-100 shadow-slate-500/25',
     loading: 'bg-gradient-to-r from-slate-700 to-slate-600 text-slate-100 shadow-slate-500/25'
   } as const
-
-  /**
-   * Auto-scroll to bottom when new messages are added
-   */
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
 
   /**
    * Creates a new message object with a unique ID
@@ -177,6 +173,42 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
       return null
     }
     return trimmedInput
+  }
+
+  /**
+   * Handle save preferences immediately without confirmation
+   */
+  const handleSavePreferences = async () => {
+    setSaveStatus('saving');
+
+    try {
+      const response = await fetch('/api/preferences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'default',
+          preferences
+        }),
+      });
+
+      if (response.ok) {
+        // Reload preferences to confirm save
+        await loadPreferences();
+        setSaveStatus('saved');
+
+        // Reset to idle after delay
+        setTimeout(() => {
+          setSaveStatus('idle');
+        }, AUTO_RESET_DELAY_MS);
+      } else {
+        throw new Error('Failed to save preferences');
+      }
+    } catch (error) {
+      console.error('Failed to save preferences:', error);
+      setSaveStatus('idle'); // Reset on error
+    }
   }
 
   const sendUserMessage = (userMessage: string) => {
@@ -269,61 +301,51 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
     }
   }
 
-  /**
-   * Save preferences to API
-   */
-  const savePreferences = async () => {
-    setIsSaving(true);
-    try {
-      const response = await fetch('/api/preferences', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: 'default',
-          preferences
-        }),
-      });
 
-      if (response.ok) {
-        // Reload preferences to confirm save
-        await loadPreferences();
-        alert('Preferences saved successfully!');
-      } else {
-        throw new Error('Failed to save preferences');
-      }
-    } catch (error) {
-      console.error('Failed to save preferences:', error);
-      alert('Failed to save preferences. Please try again.');
-    } finally {
-      setIsSaving(false);
-    }
-  }
 
   /**
-   * Reset preferences to defaults
+   * Handle reset preferences with double-click mechanism
    */
-  const resetPreferences = async () => {
-    if (!confirm('Are you sure you want to reset all preferences to defaults?')) {
+  const handleResetPreferences = async () => {
+    if (resetStatus === 'idle') {
+      // First click - show confirm
+      setResetStatus('confirm');
+
+      // Auto-reset to idle after delay if not clicked again
+      setTimeout(() => {
+        setResetStatus((currentStatus) => {
+          return currentStatus === 'confirm' ? 'idle' : currentStatus;
+        });
+      }, AUTO_RESET_DELAY_MS);
+
       return;
     }
 
-    try {
-      const response = await fetch('/api/preferences?userId=default', {
-        method: 'DELETE',
-      });
+    if (resetStatus === 'confirm') {
+      // Second click - reset
+      setResetStatus('resetting');
 
-      if (response.ok) {
-        const data = await response.json();
-        setPreferences(data.preferences);
-        alert('Preferences reset to defaults!');
-      } else {
-        throw new Error('Failed to reset preferences');
+      try {
+        const response = await fetch('/api/preferences?userId=default', {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setPreferences(data.preferences);
+          setResetStatus('reset');
+
+          // Reset to idle after delay
+          setTimeout(() => {
+            setResetStatus('idle');
+          }, AUTO_RESET_DELAY_MS);
+        } else {
+          throw new Error('Failed to reset preferences');
+        }
+      } catch (error) {
+        console.error('Failed to reset preferences:', error);
+        setResetStatus('idle'); // Reset on error
       }
-    } catch (error) {
-      console.error('Failed to reset preferences:', error);
-      alert('Failed to reset preferences. Please try again.');
     }
   }
 
@@ -511,7 +533,7 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
                       <TabsTrigger value="analytics">Analytics</TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="preferences" className="space-y-4">
+                    <TabsContent value="preferences" className="space-y-4" style={{ height: SETTINGS_TAB_HEIGHT }}>
                       <div className="space-y-4">
                         <div>
                           <Label htmlFor="priority" className="text-slate-200">Routing Priority</Label>
@@ -563,48 +585,55 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
 
                         <div className="flex gap-4">
                           <Button
-                            onClick={savePreferences}
-                            disabled={isSaving}
+                            onClick={handleSavePreferences}
+                            disabled={saveStatus === 'saving'}
                             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium"
                           >
-                            {isSaving ? 'Saving...' : 'Save Preferences'}
+                            {saveStatus === 'idle' && 'Save Preferences'}
+                            {saveStatus === 'confirm' && 'Confirm'}
+                            {saveStatus === 'saving' && 'Saving...'}
+                            {saveStatus === 'saved' && 'Saved ✓'}
                           </Button>
                           <Button
-                            onClick={resetPreferences}
+                            onClick={handleResetPreferences}
+                            disabled={resetStatus === 'resetting'}
                             className="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-100 border-slate-600 font-medium"
                           >
-                            Reset to Default
+                            {resetStatus === 'idle' && 'Reset to Default'}
+                            {resetStatus === 'confirm' && 'Confirm'}
+                            {resetStatus === 'resetting' && 'Resetting...'}
+                            {resetStatus === 'reset' && 'Reset ✓'}
                           </Button>
                         </div>
                       </div>
                     </TabsContent>
 
-                    <TabsContent value="analytics" className="space-y-4">
+                    <TabsContent value="analytics" className="space-y-4" style={{ height: SETTINGS_TAB_HEIGHT }}>
                       <div className="grid grid-cols-2 gap-4">
                         <Card className="bg-slate-800 border-slate-700">
-                          <CardContent className="p-4">
-                            <div className="text-2xl font-bold text-slate-100">{analytics.totalRequests}</div>
+                          <CardContent className="p-2 text-center">
+                            <div className="text-lg text-slate-100">{analytics.totalRequests}</div>
                             <div className="text-sm text-slate-400">Total Requests</div>
                           </CardContent>
                         </Card>
 
                         <Card className="bg-slate-800 border-slate-700">
-                          <CardContent className="p-4">
-                            <div className="text-2xl font-bold text-slate-100">{Math.round(analytics.averageProcessingTime)}ms</div>
+                          <CardContent className="p-2 text-center">
+                            <div className="text-lg text-slate-100">{Math.round(analytics.averageProcessingTime)}ms</div>
                             <div className="text-sm text-slate-400">Avg Response Time</div>
                           </CardContent>
                         </Card>
 
                         <Card className="bg-slate-800 border-slate-700">
-                          <CardContent className="p-4">
-                            <div className="text-2xl font-bold text-slate-100">{analytics.totalTokensUsed.toLocaleString()}</div>
+                          <CardContent className="p-2 text-center">
+                            <div className="text-lg text-slate-100">{analytics.totalTokensUsed.toLocaleString()}</div>
                             <div className="text-sm text-slate-400">Total Tokens Used</div>
                           </CardContent>
                         </Card>
 
                         <Card className="bg-slate-800 border-slate-700">
-                          <CardContent className="p-4">
-                            <div className="text-2xl font-bold text-slate-100">
+                          <CardContent className="p-2 text-center">
+                            <div className="text-lg text-slate-100">
                               {analytics.mostUsedModel?.model.split('/').pop() || 'N/A'}
                             </div>
                             <div className="text-sm text-slate-400">Most Used Model</div>
@@ -617,13 +646,13 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
                           <CardTitle className="text-slate-100">Recent Routing Decisions</CardTitle>
                         </CardHeader>
                         <CardContent>
-                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                          <div className="space-y-2 max-h-28 overflow-y-auto">
                             {analytics.recentDecisions.slice(0, 5).map((decision: RecentDecision, index: number) => (
                               <div key={index} className="flex justify-between items-center p-2 bg-slate-700/50 rounded">
                                 <div className="text-sm text-slate-200 truncate flex-1">
                                   {decision.userMessage?.substring(0, 50)}...
                                 </div>
-                                <Badge variant="secondary" className="ml-2 text-xs">
+                                <Badge variant="secondary" className="ml-2 text-xs text-slate-200">
                                   {decision.selectedModel?.split('/').pop()}
                                 </Badge>
                               </div>
@@ -636,11 +665,6 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
                           </div>
                         </CardContent>
                       </Card>
-
-                      <Button variant="outline" className="w-full">
-                        <BarChart3 className="h-4 w-4 mr-2" />
-                        View Detailed Analytics
-                      </Button>
                     </TabsContent>
                   </Tabs>
                 </CardContent>
