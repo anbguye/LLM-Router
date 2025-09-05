@@ -24,6 +24,7 @@ An intelligent chat application that automatically routes user queries to the mo
 - **📊 Performance Metrics**: Displays processing time and token usage
 - **🛡️ Robust Error Handling**: Multiple fallback strategies ensure reliability
 - **🎯 Model Pool**: Access to 12+ free models from providers like DeepSeek, Meta, Google, Qwen, and more
+- **📝 Multi-line Input**: Press Shift+Enter to create line breaks (like Discord/Slack) with auto-resizing input field
 
 - **🎪 Advanced Modal System**: Professional modal implementation with:
   - **Scroll-Following**: Modal stays perfectly centered while scrolling
@@ -319,7 +320,6 @@ This project is open source and available under the [MIT License](LICENSE).
 ## 🚀 Future Enhancements
 
 ### Planned Features
-- [ ] **Multi-line Message Support**: Hold Shift+Enter to create line breaks in messages (like Discord/Slack)
 - [ ] **Message History**: Save and browse previous conversations
 - [ ] **Model Comparison**: Side-by-side comparison of different model responses
 - [ ] **Custom Model Weights**: User-defined scoring for model preferences

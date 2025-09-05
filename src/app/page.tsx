@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -26,6 +26,9 @@ const MODAL_RENDER_DELAY = 10;
 // Settings constants
 const SETTINGS_TAB_HEIGHT = '300px';
 const AUTO_RESET_DELAY_MS = 2000;
+
+// Input constants
+const INPUT_MAX_HEIGHT = 200;
 
 // Markdown styling constants
 const MARKDOWN_PROSE_CLASSES = `
@@ -260,7 +263,12 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
     handleAiResponse(userMessage)
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  /**
+   * Handles keyboard input for the chat textarea
+   * - Enter: Send message (if not loading)
+   * - Shift+Enter: Create new line (default browser behavior)
+   */
+  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && !isLoading) {
       e.preventDefault()
       handleSendMessage()
@@ -483,13 +491,23 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
         {/* Sticky Input Bar */}
         <div className="sticky bottom-0 z-10 border-t border-slate-700/50 p-4 bg-gradient-to-r from-slate-800/90 to-slate-700/90 backdrop-blur-sm">
           <div className="flex gap-2">
-            <Input
+            <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleTextareaKeyDown}
               placeholder={isLoading ? "AI is responding..." : "Type your message..."}
               disabled={isLoading}
-              className="flex-1 bg-slate-700/50 border-slate-600 text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20 disabled:opacity-50"
+              rows={1}
+              className="flex-1 bg-slate-700/50 border border-slate-600 text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 disabled:opacity-50 rounded-md px-3 py-2 text-base shadow-sm transition-colors resize-none overflow-hidden min-h-[36px] max-h-[200px]"
+              style={{
+                height: 'auto',
+                minHeight: '36px'
+              }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = Math.min(target.scrollHeight, INPUT_MAX_HEIGHT) + 'px';
+              }}
             />
             <Button
               onClick={handleSendMessage}
