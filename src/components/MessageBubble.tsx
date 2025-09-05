@@ -29,7 +29,6 @@ interface MessageBubbleProps {
  */
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
-  maxWidthPercent,
   markdownClasses
 }) => {
   const MESSAGE_STYLES = {
@@ -41,10 +40,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     <div
       className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
     >
-      <div
-        className="flex flex-col space-y-2"
-        style={{ maxWidth: `${maxWidthPercent}%` }}
-      >
+        <div
+          className="flex flex-col space-y-2"
+          style={{ maxWidth: '600px' }}
+        >
         {/* Main message content */}
         <div
           className={`rounded-lg p-3 shadow-lg ${
@@ -57,11 +56,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             ) : (
               <Bot className="h-4 w-4 mt-0.5 flex-shrink-0" />
             )}
-            <div className="text-sm flex-1">
+            <div className="text-sm flex-1 overflow-wrap-anywhere">
               {message.role === 'user' ? (
-                <p className="whitespace-pre-wrap">{message.content}</p>
+                <p className="whitespace-pre-wrap break-words">{message.content}</p>
               ) : (
-                <div className={markdownClasses}>
+                <div className={`${markdownClasses} break-words`}>
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeHighlight]}
