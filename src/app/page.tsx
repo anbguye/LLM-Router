@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Send, Settings, X } from 'lucide-react'
 import { MessageBubble } from '@/components/MessageBubble'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import 'highlight.js/styles/github-dark.css'
 
 // UI constants
@@ -124,10 +125,16 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
 
+  // Base message styling components
+  const MESSAGE_BASE_STYLES = 'bg-gradient-to-r shadow-lg rounded-lg p-3'
+  const USER_MESSAGE_STYLES = 'from-blue-600 to-blue-700 text-white shadow-blue-500/25'
+  const ASSISTANT_LIGHT_STYLES = 'from-slate-200 to-slate-300 text-slate-900 shadow-slate-500/25'
+  const ASSISTANT_DARK_STYLES = 'from-slate-700 to-slate-600 text-slate-100 shadow-slate-500/25'
+
   const MESSAGE_STYLES = {
-    user: 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-blue-500/25',
-    assistant: 'bg-gradient-to-r from-slate-700 to-slate-600 text-slate-100 shadow-slate-500/25',
-    loading: 'bg-gradient-to-r from-slate-700 to-slate-600 text-slate-100 shadow-slate-500/25'
+    user: `${MESSAGE_BASE_STYLES} ${USER_MESSAGE_STYLES} dark:${USER_MESSAGE_STYLES}`,
+    assistant: `${MESSAGE_BASE_STYLES} ${ASSISTANT_LIGHT_STYLES} dark:${ASSISTANT_DARK_STYLES}`,
+    loading: `${MESSAGE_BASE_STYLES} ${ASSISTANT_LIGHT_STYLES} dark:${ASSISTANT_DARK_STYLES}`
   } as const
 
   /**
@@ -433,19 +440,20 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
   }, [showSettings]);
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-white dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       {/* Centered container for desktop */}
-      <div className="flex flex-col w-full max-w-4xl mx-auto bg-gradient-to-b from-slate-800/50 to-slate-900/50 backdrop-blur-sm border-x border-slate-700/50">
+      <div className="flex flex-col w-full max-w-4xl mx-auto bg-gradient-to-b from-slate-200/50 to-slate-100/50 backdrop-blur-sm border-x border-slate-300/50 dark:from-slate-800/50 dark:to-slate-900/50 dark:border-slate-700/50">
         {/* Sticky Header */}
-        <div className="sticky top-0 z-10 border-b border-slate-700/50 p-4 bg-gradient-to-r from-slate-800/90 to-slate-700/90 backdrop-blur-sm">
+        <div className="sticky top-0 z-10 border-b border-slate-300/50 p-4 bg-gradient-to-r from-slate-200/90 to-slate-100/90 backdrop-blur-sm dark:border-slate-700/50 dark:from-slate-800/90 dark:to-slate-700/90">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-slate-100">Chat</h1>
+            <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Chat</h1>
             <div className="flex gap-2">
+              <ThemeToggle />
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowSettings(!showSettings)}
-                className="bg-slate-800/50 border-slate-600 text-slate-200 hover:bg-slate-700/50"
+                className="bg-slate-200/50 border-slate-300 text-slate-700 hover:bg-slate-300/50 dark:bg-slate-800/50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700/50"
               >
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
@@ -457,7 +465,7 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
         {/* Messages - Scrollable area */}
         <div
           data-messages-container
-          className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-transparent to-slate-900/20 min-h-0"
+          className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-transparent to-slate-900/20 min-h-0 dark:to-slate-900/20"
         >
           {messages.map((message) => (
             <MessageBubble
@@ -478,7 +486,7 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
                     <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: ANIMATION_DELAY_1}}></div>
                     <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: ANIMATION_DELAY_2}}></div>
                   </div>
-                  <span className="text-sm text-slate-400">AI is thinking...</span>
+                  <span className="text-sm text-slate-500 dark:text-slate-400">AI is thinking...</span>
                 </div>
               </div>
             </div>
@@ -489,7 +497,7 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
         </div>
 
         {/* Sticky Input Bar */}
-        <div className="sticky bottom-0 z-10 border-t border-slate-700/50 p-4 bg-gradient-to-r from-slate-800/90 to-slate-700/90 backdrop-blur-sm">
+        <div className="sticky bottom-0 z-10 border-t border-slate-300/50 p-4 bg-gradient-to-r from-slate-200/90 to-slate-100/90 backdrop-blur-sm dark:border-slate-700/50 dark:from-slate-800/90 dark:to-slate-700/90">
           <div className="flex gap-2">
             <textarea
               value={input}
@@ -498,7 +506,7 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
               placeholder={isLoading ? "AI is responding..." : "Type your message..."}
               disabled={isLoading}
               rows={1}
-              className="flex-1 bg-slate-700/50 border border-slate-600 text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 disabled:opacity-50 rounded-md px-3 py-2 text-base shadow-sm transition-colors resize-none overflow-hidden min-h-[36px] max-h-[200px]"
+              className="flex-1 bg-slate-200/50 border border-slate-300 text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 disabled:opacity-50 rounded-md px-3 py-2 text-base shadow-sm transition-colors resize-none overflow-hidden min-h-[36px] max-h-[200px] dark:bg-slate-700/50 dark:border-slate-600 dark:text-slate-100 dark:placeholder:text-slate-400"
               style={{
                 height: 'auto',
                 minHeight: '36px'
@@ -545,14 +553,14 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
               }}
               onClick={(e) => e.stopPropagation()} // Prevent backdrop click when clicking modal
             >
-              <Card className="w-full h-full max-h-[80vh] overflow-hidden bg-slate-900 border-slate-700 flex flex-col shadow-2xl">
-                <CardHeader className="flex flex-row items-center justify-between flex-shrink-0 border-b border-slate-700">
-                  <CardTitle className="text-slate-100 text-lg font-semibold">Router Settings</CardTitle>
+              <Card className="w-full h-full max-h-[80vh] overflow-hidden bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-700 flex flex-col shadow-2xl">
+                <CardHeader className="flex flex-row items-center justify-between flex-shrink-0 border-b border-slate-200 dark:border-slate-700">
+                  <CardTitle className="text-slate-900 dark:text-slate-100 text-lg font-semibold">Router Settings</CardTitle>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowSettings(false)}
-                    className="text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-full p-2"
+                    className="text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800 rounded-full p-2"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -567,9 +575,9 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
                     <TabsContent value="preferences" className="space-y-4" style={{ height: SETTINGS_TAB_HEIGHT }}>
                       <div className="space-y-4">
                         <div>
-                          <Label htmlFor="priority" className="text-slate-200">Routing Priority</Label>
+                          <Label htmlFor="priority" className="text-slate-700 dark:text-slate-200">Routing Priority</Label>
                           <Select value={preferences.priority} onValueChange={(value) => setPreferences({...preferences, priority: value})}>
-                            <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-200">
+                            <SelectTrigger className="bg-slate-50 border-slate-300 text-slate-900 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200">
                               <SelectValue>
                                 {preferences.priority === 'auto' && 'Auto (Let Router Decide)'}
                                 {preferences.priority === 'latency' && 'Latency (Fastest Response)'}
@@ -587,17 +595,17 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
                         </div>
 
                         <div className="space-y-3">
-                          <Label className="text-slate-200">Current Routing Settings</Label>
+                          <Label className="text-slate-700 dark:text-slate-200">Current Routing Settings</Label>
                           <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-slate-800/50 border border-slate-600 rounded-md p-3">
-                              <div className="text-xs text-slate-400 mb-1">Latency Weight</div>
-                              <div className="text-lg font-semibold text-slate-200">
+                            <div className="bg-slate-50 border border-slate-300 dark:bg-slate-800/50 dark:border-slate-600 rounded-md p-3">
+                              <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Latency Weight</div>
+                              <div className="text-lg font-semibold text-slate-900 dark:text-slate-200">
                                 {getRoutingWeight('latency', preferences.priority)}%
                               </div>
                             </div>
-                            <div className="bg-slate-800/50 border border-slate-600 rounded-md p-3">
-                              <div className="text-xs text-slate-400 mb-1">Quality Weight</div>
-                              <div className="text-lg font-semibold text-slate-200">
+                            <div className="bg-slate-50 border border-slate-300 dark:bg-slate-800/50 dark:border-slate-600 rounded-md p-3">
+                              <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Quality Weight</div>
+                              <div className="text-lg font-semibold text-slate-900 dark:text-slate-200">
                                 {getRoutingWeight('quality', preferences.priority)}%
                               </div>
                             </div>
@@ -631,55 +639,55 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
 
                     <TabsContent value="analytics" className="space-y-4" style={{ height: SETTINGS_TAB_HEIGHT }}>
                       <div className="grid grid-cols-2 gap-4">
-                        <Card className="bg-slate-800 border-slate-700">
+                        <Card className="bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700">
                           <CardContent className="p-2 text-center">
-                            <div className="text-lg text-slate-100">{analytics.totalRequests}</div>
-                            <div className="text-sm text-slate-400">Total Requests</div>
+                            <div className="text-lg text-slate-900 dark:text-slate-100">{analytics.totalRequests}</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Total Requests</div>
                           </CardContent>
                         </Card>
 
-                        <Card className="bg-slate-800 border-slate-700">
+                        <Card className="bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700">
                           <CardContent className="p-2 text-center">
-                            <div className="text-lg text-slate-100">{Math.round(analytics.averageProcessingTime)}ms</div>
-                            <div className="text-sm text-slate-400">Avg Response Time</div>
+                            <div className="text-lg text-slate-900 dark:text-slate-100">{Math.round(analytics.averageProcessingTime)}ms</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Avg Response Time</div>
                           </CardContent>
                         </Card>
 
-                        <Card className="bg-slate-800 border-slate-700">
+                        <Card className="bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700">
                           <CardContent className="p-2 text-center">
-                            <div className="text-lg text-slate-100">{analytics.totalTokensUsed.toLocaleString()}</div>
-                            <div className="text-sm text-slate-400">Total Tokens Used</div>
+                            <div className="text-lg text-slate-900 dark:text-slate-100">{analytics.totalTokensUsed.toLocaleString()}</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Total Tokens Used</div>
                           </CardContent>
                         </Card>
 
-                        <Card className="bg-slate-800 border-slate-700">
+                        <Card className="bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700">
                           <CardContent className="p-2 text-center">
-                            <div className="text-lg text-slate-100">
+                            <div className="text-lg text-slate-900 dark:text-slate-100">
                               {analytics.mostUsedModel?.model.split('/').pop() || 'N/A'}
                             </div>
-                            <div className="text-sm text-slate-400">Most Used Model</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Most Used Model</div>
                           </CardContent>
                         </Card>
                       </div>
 
-                      <Card className="bg-slate-800 border-slate-700">
+                      <Card className="bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700">
                         <CardHeader>
-                          <CardTitle className="text-slate-100">Recent Routing Decisions</CardTitle>
+                          <CardTitle className="text-slate-900 dark:text-slate-100">Recent Routing Decisions</CardTitle>
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-2 max-h-28 overflow-y-auto">
                             {analytics.recentDecisions.slice(0, 5).map((decision: RecentDecision, index: number) => (
-                              <div key={index} className="flex justify-between items-center p-2 bg-slate-700/50 rounded">
-                                <div className="text-sm text-slate-200 truncate flex-1">
+                              <div key={index} className="flex justify-between items-center p-2 bg-slate-100 dark:bg-slate-700/50 rounded">
+                                <div className="text-sm text-slate-700 dark:text-slate-200 truncate flex-1">
                                   {decision.userMessage?.substring(0, 50)}...
                                 </div>
-                                <Badge variant="secondary" className="ml-2 text-xs text-slate-200">
+                                <Badge variant="secondary" className="ml-2 text-xs text-slate-700 dark:text-slate-200">
                                   {decision.selectedModel?.split('/').pop()}
                                 </Badge>
                               </div>
                             ))}
                             {analytics.recentDecisions.length === 0 && (
-                              <div className="text-sm text-slate-400 text-center py-4">
+                              <div className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">
                                 No routing decisions yet
                               </div>
                             )}

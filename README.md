@@ -25,6 +25,7 @@ An intelligent chat application that automatically routes user queries to the mo
 - **🛡️ Robust Error Handling**: Multiple fallback strategies ensure reliability
 - **🎯 Model Pool**: Access to 12+ free models from providers like DeepSeek, Meta, Google, Qwen, and more
 - **📝 Multi-line Input**: Press Shift+Enter to create line breaks (like Discord/Slack) with auto-resizing input field
+- **🌓 Light/Dark Mode**: Complete theme system with automatic system preference detection and manual toggle
 
 - **🎪 Advanced Modal System**: Professional modal implementation with:
   - **Scroll-Following**: Modal stays perfectly centered while scrolling
@@ -111,10 +112,12 @@ src/
 │   ├── api/chat/
 │   │   └── route.ts          # Main chat API endpoint
 │   ├── page.tsx              # Main chat interface with advanced modal system
-│   └── layout.tsx            # App layout
+│   ├── layout.tsx            # App layout with theme provider
+│   └── globals.css           # Global styles with light/dark mode variables
 ├── components/
 │   ├── ui/                   # Shadcn UI components
-│   └── MessageBubble.tsx     # Message rendering component
+│   ├── MessageBubble.tsx     # Message rendering component
+│   └── ThemeToggle.tsx       # Light/dark mode toggle component
 ├── config/
 │   └── models.ts             # Model configurations
 ├── utils/
@@ -325,7 +328,6 @@ This project is open source and available under the [MIT License](LICENSE).
 - [ ] **Custom Model Weights**: User-defined scoring for model preferences
 - [ ] **Voice Input**: Speech-to-text for hands-free interaction
 - [ ] **Export Conversations**: Save chats as markdown or PDF
-- [ ] **Dark/Light Theme Toggle**: Complete theme system
 - [ ] **Keyboard Shortcuts**: Full keyboard navigation support
 
 ### Technical Improvements
@@ -338,4 +340,4 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ---
 
-**Try it out!** Ask the router anything and watch it intelligently select the perfect model for your question. The system learns from each interaction to make better routing decisions over time.
+**Try it out!** Ask the router anything and watch it intelligently select the perfect model for your question.
