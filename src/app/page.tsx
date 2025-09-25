@@ -128,7 +128,7 @@ Hello! I'm an intelligent LLM router that automatically selects the best AI mode
   // Base message styling components
   const MESSAGE_BASE_STYLES = 'bg-gradient-to-r shadow-lg rounded-lg p-3'
   const USER_MESSAGE_STYLES = 'from-blue-600 to-blue-700 text-white shadow-blue-500/25'
-  const ASSISTANT_LIGHT_STYLES = 'from-slate-200 to-slate-300 text-slate-900 shadow-slate-500/25'
+  const ASSISTANT_LIGHT_STYLES = 'from-slate-600 to-slate-700 text-white shadow-slate-500/25'
   const ASSISTANT_DARK_STYLES = 'from-slate-700 to-slate-600 text-slate-100 shadow-slate-500/25'
 
   const MESSAGE_STYLES = {
